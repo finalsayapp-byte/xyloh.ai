@@ -1,8 +1,10 @@
+import { fetchSources } from './_sourcesUtil.js';
+
 export default async function handler(req, res) {
   try {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-    const { name = '', birth = '', tone = 'supportive', question = '', context = '' } = req.body || {};
+    const { name = '', birth = '', tone = 'supportive', question = '', context = '', wantSources = false, persona = 'General' } = req.body || {};
     if (!process.env.OPENAI_API_KEY) return res.status(500).json({ error: 'Missing OPENAI_API_KEY' });
     if (!question) return res.status(400).json({ error: 'Missing question' });
 
@@ -17,7 +19,7 @@ export default async function handler(req, res) {
     const system = [
       'You are Xyloh.ai — a grounded, trustworthy oracle.',
       'Blend reason with intuition; give actionable guidance.',
-      'Be concise. Avoid medical/legal diagnosis; if the user asks for medical or legal advice, include a brief nudge to consult a professional.',
+      'Be concise. If medical/legal, add a brief note to consult a professional.'
     ].join(' ');
 
     const user = [
@@ -26,7 +28,7 @@ export default async function handler(req, res) {
       `TONE: ${toneMap[tone] || toneMap.supportive}`,
       `QUESTION: ${question}`,
       context ? `CONTEXT: ${context}` : '',
-      'RETURN: A single, self-contained answer the user can act on today. No prefaces like "Here is...". No quotes.'
+      'RETURN: A single, self-contained answer the user can act on today. No prefaces. No quotes.'
     ].filter(Boolean).join('\n');
 
     const r = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -35,7 +37,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         temperature: 0.7,
-        max_tokens: 400,
+        max_tokens: 500,
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: user }
@@ -43,14 +45,17 @@ export default async function handler(req, res) {
       })
     });
 
-    if (!r.ok) {
-      const text = await r.text();
-      return res.status(500).json({ error: `OpenAI error: ${text}` });
-    }
-
+    if (!r.ok) return res.status(500).json({ error: `OpenAI error: ${await r.text()}` });
     const data = await r.json();
     const answer = data?.choices?.[0]?.message?.content?.trim() || '';
-    return res.status(200).json({ answer });
+
+    let sources = [];
+    if (wantSources) {
+      const topic = (question || context || '').slice(0, 240);
+      sources = await fetchSources({ persona, topic });
+    }
+
+    return res.status(200).json({ answer, sources });
   } catch (e) {
     return res.status(500).json({ error: e.message || 'Server error' });
   }
