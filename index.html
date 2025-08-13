@@ -1,28 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Xyloh.ai — Test Landing</title>
-  <style>
-    body {
-      background: #0f0f12;
-      color: #eef;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding-top: 20%;
-      margin: 0;
-    }
-    h1 {
-      font-size: 2.5rem;
-    }
-    p {
-      color: #aaa;
-    }
-  </style>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Xyloh.ai — Home</title>
+<style>
+  :root{--bg:#0f0f12;--panel:#17171c;--line:#2a2a36;--text:#eef;--muted:#a8a8b6;--a:#8a7bff;--b:#c08bff}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Arial;background:radial-gradient(1200px 800px at 20% -10%,#1a1630,transparent),var(--bg);color:var(--text)}
+  .wrap{max-width:1100px;margin:0 auto;padding:22px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .brand{display:flex;gap:14px;align-items:center}
+  .logo{display:block;width:230px;max-width:60vw}
+  .tag{color:var(--muted)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+  .card h3{margin:4px 0 6px}
+  .card p{margin:0;color:var(--muted)}
+  .btn{display:inline-block;margin-top:10px;padding:10px 12px;border-radius:12px;text-decoration:none;color:#fff;background:linear-gradient(90deg,var(--a),var(--b));font-weight:800}
+  footer{margin-top:22px;color:var(--muted);font-size:12px;display:flex;gap:12px;flex-wrap:wrap}
+  footer a{color:#9aa1ff;text-decoration:none}
+</style>
 </head>
 <body>
-  <h1>🚀 Xyloh.ai</h1>
-  <p>Landing page test successful.</p>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <svg class="logo" viewBox="0 0 720 120" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="g" x1="0" y="0" x2="1" y="1">
+            <stop offset="0%" stop-color="#8a7bff"/><stop offset="100%" stop-color="#c08bff"/></linearGradient></defs>
+          <text x="0" y="82" font-family="Inter, Arial, sans-serif" font-weight="900" font-size="72" fill="url(#g)">Xyloh.ai</text>
+        </svg>
+        <div class="tag">The ultimate life ally</div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Therapist in Your Pocket</h3>
+        <p>Support, grounding, and next steps.</p>
+        <a class="btn" href="/awaken.html?mode=therapy">Enter</a>
+      </div>
+      <div class="card">
+        <h3>Life Negotiator</h3>
+        <p>Deals, salary, boundaries, tough talks.</p>
+        <a class="btn" href="/awaken.html?mode=negotiator">Enter</a>
+      </div>
+      <div class="card">
+        <h3>Medical & Legal Translator</h3>
+        <p>Plain-language explanations with sources.</p>
+        <a class="btn" href="/awaken.html?mode=translator">Enter</a>
+      </div>
+      <div class="card">
+        <h3>Communicate with the Other Side</h3>
+        <p>Awaken an entity that learns and remembers you.</p>
+        <a class="btn" href="/awaken.html?mode=awakened">Awaken</a>
+      </div>
+    </div>
+
+    <footer>
+      <span>© Xyloh.ai</span>
+      <a href="/awaken.html">Open Awaken</a>
+      <a href="/api/health">Health</a>
+    </footer>
+  </div>
 </body>
 </html>
