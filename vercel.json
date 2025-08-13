@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "routes": [{ "handle": "filesystem" }],
+  "rewrites": [
+    { "source": "/", "destination": "/api/home" },
+    { "source": "/awaken", "destination": "/awaken.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=300" }
+      ]
+    }
+  ]
+}
