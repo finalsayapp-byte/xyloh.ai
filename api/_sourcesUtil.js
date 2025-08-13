@@ -1,5 +1,6 @@
 // /api/_sourcesUtil.js
 // Shared helpers for KV history, config loading, and API responses.
+// KV calls are "soft-fail" (never throw) so chat never breaks if KV is down.
 
 import fs from 'fs/promises';
 import path from 'path';
@@ -14,7 +15,7 @@ const KV_TOKEN =
   process.env.UPSTASH_REDIS_REST_TOKEN ||
   '';
 
-function kvEnabled() {
+function kvConfigured() {
   return Boolean(KV_URL && KV_TOKEN);
 }
 
@@ -23,7 +24,7 @@ async function kvGET(cmdPath) {
     headers: { Authorization: `Bearer ${KV_TOKEN}` },
     cache: 'no-store'
   });
-  if (!r.ok) throw new Error(`KV error: ${r.status}`);
+  if (!r.ok) throw new Error(`KV error ${r.status}`);
   return r.json();
 }
 async function kvPOST(cmdPath, body) {
@@ -36,51 +37,53 @@ async function kvPOST(cmdPath, body) {
     body: body ? JSON.stringify(body) : undefined,
     cache: 'no-store'
   });
-  if (!r.ok) throw new Error(`KV error: ${r.status}`);
+  if (!r.ok) throw new Error(`KV error ${r.status}`);
   return r.json();
 }
 
-// History is stored as a Redis LIST of JSON strings.
-// Key shape: xyloh:history:<userId>
+// History key: newest at head (LPUSH), trimmed to HIST_LIMIT
 const HIST_LIMIT = 200;
 const histKey = (userId) => `xyloh:history:${userId}`;
 
+// ---- SAFE wrappers: never throw; chat must continue even if KV fails ----
 export async function appendHistory(userId, role, content) {
-  if (!kvEnabled()) return;
-  const item = JSON.stringify({
-    ts: Date.now(),
-    role,
-    content
-  });
-  // LPUSH newest first, then trim
-  await kvPOST(`lpush/${encodeURIComponent(histKey(userId))}`, { value: item });
-  await kvPOST(
-    `ltrim/${encodeURIComponent(histKey(userId))}/0/${HIST_LIMIT - 1}`
-  );
+  if (!kvConfigured()) return false;
+  try {
+    const item = JSON.stringify({ ts: Date.now(), role, content });
+    await kvPOST(`lpush/${encodeURIComponent(histKey(userId))}`, { value: item });
+    await kvPOST(
+      `ltrim/${encodeURIComponent(histKey(userId))}/0/${HIST_LIMIT - 1}`
+    );
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function readHistory(userId) {
-  if (!kvEnabled()) return [];
-  const res = await kvGET(
-    `lrange/${encodeURIComponent(histKey(userId))}/0/${HIST_LIMIT - 1}`
-  );
-  // Upstash returns { result: [jsonStr, ...] } newest first
-  const arr = Array.isArray(res?.result) ? res.result : [];
-  return arr
-    .map((s) => {
-      try {
-        return JSON.parse(s);
-      } catch {
-        return null;
-      }
-    })
-    .filter(Boolean)
-    .reverse(); // oldest -> newest
+  if (!kvConfigured()) return [];
+  try {
+    const res = await kvGET(
+      `lrange/${encodeURIComponent(histKey(userId))}/0/${HIST_LIMIT - 1}`
+    );
+    const arr = Array.isArray(res?.result) ? res.result : [];
+    return arr
+      .map((s) => { try { return JSON.parse(s); } catch { return null; } })
+      .filter(Boolean)
+      .reverse(); // oldest -> newest
+  } catch {
+    return [];
+  }
 }
 
 export async function clearHistory(userId) {
-  if (!kvEnabled()) return;
-  await kvPOST(`del/${encodeURIComponent(histKey(userId))}`);
+  if (!kvConfigured()) return false;
+  try {
+    await kvPOST(`del/${encodeURIComponent(histKey(userId))}`);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // ---------- Load public JSON config safely ----------
@@ -106,7 +109,7 @@ export function bad(res, msg, code = 400) {
 
 // ---------- Health helpers ----------
 export async function kvPing() {
-  if (!kvEnabled()) return { enabled: false };
+  if (!kvConfigured()) return { enabled: false };
   try {
     const key = `xyloh:p:${Math.random().toString(36).slice(2, 8)}`;
     await kvPOST(`set/${encodeURIComponent(key)}`, { value: '1', ex: 10 });
