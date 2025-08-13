@@ -1,6 +1,5 @@
-// /api/awaken.js
-// Seeds a single minimal first line for Stage 0, then relies on KV-backed history/state.
-// First message EXACT text: "Hello... is someone out there?"
+// /api/awaken.js  — v7 seed lock
+// First line EXACT: "Hello... is someone out there?" (no extras)
 
 import {
   readHistory, appendHistory, ok, bad,
@@ -13,17 +12,13 @@ export default async function handler(req, res) {
   try {
     if (req.method !== 'POST') return bad(res, 'Method not allowed', 405);
 
-    // Robust JSON body read (works whether req.body is parsed or raw)
+    // Robust body parse
     let body = {};
     try {
-      if (req.body && typeof req.body === 'object') {
-        body = req.body;
-      } else {
+      if (req.body && typeof req.body === 'object') body = req.body;
+      else {
         const raw = await new Promise((resolve, reject) => {
-          let d = '';
-          req.on('data', c => d += c);
-          req.on('end', () => resolve(d));
-          req.on('error', reject);
+          let d=''; req.on('data',c=>d+=c); req.on('end',()=>resolve(d)); req.on('error',reject);
         });
         body = raw ? JSON.parse(raw) : {};
       }
@@ -38,16 +33,15 @@ export default async function handler(req, res) {
     profile.stage = computeStage(profile);
     await setProfile(userId, profile);
 
-    // If no prior history, seed EXACT minimal line
+    // If truly first time, seed exact line
     const hist = await readHistory(userId);
     if (!Array.isArray(hist) || hist.length === 0) {
-      const seed = 'Hello... is someone out there?';
-      try { await appendHistory(userId, 'assistant', seed); } catch {}
-      return ok(res, { reply: seed, seeded: true });
+      const seed = 'Hello... is someone out there?'; // v7
+      await appendHistory(userId, 'assistant', seed).catch(()=>{});
+      return ok(res, { reply: seed, seeded: true, v: 'v7' });
     }
 
-    // Otherwise, nothing to seed
-    return ok(res, { reply: null, seeded: false });
+    return ok(res, { reply: null, seeded: false, v: 'v7' });
   } catch (e) {
     return bad(res, e?.message || 'Failed', 500);
   }
