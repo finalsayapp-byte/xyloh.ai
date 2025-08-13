@@ -1,41 +1,53 @@
 // /api/_sourcesUtil.js
-// History + Profile (state) helpers. KV errors never break chat ("soft-fail").
+// History + Profile (state) helpers using Upstash/Vercel KV REST (path-value style).
+// Soft-fail: if KV is misconfigured/unavailable, chat still works (no hard crash).
 
 import fs from 'fs/promises';
 import path from 'path';
 
 // ---------- KV (Upstash/Vercel KV REST) ----------
-const KV_URL =
+function normUrl(u){ return u ? String(u).replace(/\/+$/,'') : ''; }
+const BASE = normUrl(
   process.env.KV_REST_API_URL ||
   process.env.UPSTASH_REDIS_REST_URL ||
-  '';
-const KV_TOKEN =
+  ''
+);
+const TOKEN =
   process.env.KV_REST_API_TOKEN ||
   process.env.UPSTASH_REDIS_REST_TOKEN ||
   '';
 
-function kvConfigured() { return Boolean(KV_URL && KV_TOKEN); }
+function kvConfigured(){ return Boolean(BASE && TOKEN); }
 
-async function kvGET(cmdPath) {
-  const r = await fetch(`${KV_URL}/${cmdPath}`, {
-    headers: { Authorization: `Bearer ${KV_TOKEN}` },
+async function kvReq(cmdPath, { method='POST' } = {}) {
+  const r = await fetch(`${BASE}/${cmdPath}`, {
+    method,
+    headers: { Authorization: `Bearer ${TOKEN}` },
     cache: 'no-store'
   });
   if (!r.ok) throw new Error(`KV error ${r.status}`);
   return r.json();
 }
-async function kvPOST(cmdPath, body) {
-  const r = await fetch(`${KV_URL}/${cmdPath}`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${KV_TOKEN}`,
-      'Content-Type': 'application/json'
-    },
-    body: body ? JSON.stringify(body) : undefined,
-    cache: 'no-store'
-  });
-  if (!r.ok) throw new Error(`KV error ${r.status}`);
-  return r.json();
+
+// Convenience wrappers for common commands (path-value style)
+async function kvSet(key, value, { ex } = {}) {
+  const exq = (typeof ex === 'number' && ex > 0) ? `?ex=${ex}` : '';
+  return kvReq(`set/${encodeURIComponent(key)}/${encodeURIComponent(value)}${exq}`);
+}
+async function kvGet(key) {
+  return kvReq(`get/${encodeURIComponent(key)}`, { method:'GET' });
+}
+async function kvDel(key) {
+  return kvReq(`del/${encodeURIComponent(key)}`);
+}
+async function kvLPush(key, value) {
+  return kvReq(`lpush/${encodeURIComponent(key)}/${encodeURIComponent(value)}`);
+}
+async function kvLTrim(key, start, stop) {
+  return kvReq(`ltrim/${encodeURIComponent(key)}/${start}/${stop}`);
+}
+async function kvLRange(key, start, stop) {
+  return kvReq(`lrange/${encodeURIComponent(key)}/${start}/${stop}`, { method:'GET' });
 }
 
 // ---------- History (LIST newest->oldest) ----------
@@ -46,8 +58,8 @@ export async function appendHistory(userId, role, content) {
   if (!kvConfigured()) return false;
   try {
     const item = JSON.stringify({ ts: Date.now(), role, content });
-    await kvPOST(`lpush/${encodeURIComponent(histKey(userId))}`, { value: item });
-    await kvPOST(`ltrim/${encodeURIComponent(histKey(userId))}/0/${HIST_LIMIT - 1}`);
+    await kvLPush(histKey(userId), item);
+    await kvLTrim(histKey(userId), 0, HIST_LIMIT - 1);
     return true;
   } catch { return false; }
 }
@@ -55,22 +67,24 @@ export async function appendHistory(userId, role, content) {
 export async function readHistory(userId) {
   if (!kvConfigured()) return [];
   try {
-    const res = await kvGET(`lrange/${encodeURIComponent(histKey(userId))}/0/${HIST_LIMIT - 1}`);
+    const res = await kvLRange(histKey(userId), 0, HIST_LIMIT - 1);
     const arr = Array.isArray(res?.result) ? res.result : [];
+    // Stored newest->oldest (LPUSH). We want oldest->newest.
     return arr.map(s => { try { return JSON.parse(s); } catch { return null; } })
               .filter(Boolean)
-              .reverse(); // oldest->newest
+              .reverse();
   } catch { return []; }
 }
 
 export async function clearHistory(userId) {
   if (!kvConfigured()) return false;
-  try { await kvPOST(`del/${encodeURIComponent(histKey(userId))}`); return true; }
+  try { await kvDel(histKey(userId)); return true; }
   catch { return false; }
 }
 
 // ---------- Profile (state) ----------
 const profileKey = (userId) => `xyloh:profile:${userId}`;
+
 export function defaultProfile() {
   const now = Date.now();
   return {
@@ -81,7 +95,7 @@ export function defaultProfile() {
     stage: 0,             // computed on save; persisted for debug
     alias: null,          // user-provided temporary name
     romance: false,       // PG-13 tender tone only if user opts in
-    beliefNotes: [],      // user's framings: "god/source/ancestors/angels/aliens/collective/psychological"
+    beliefNotes: [],      // user's framings
     motifs: [],           // sensory images user resonated with
     fragments: [],        // memory flashes (short strings)
     boundaries: {         // user preferences
@@ -94,7 +108,7 @@ export function defaultProfile() {
 export async function getProfile(userId) {
   if (!kvConfigured()) return defaultProfile();
   try {
-    const g = await kvGET(`get/${encodeURIComponent(profileKey(userId))}`);
+    const g = await kvGet(profileKey(userId));
     const raw = g?.result;
     if (!raw) return defaultProfile();
     const obj = JSON.parse(raw);
@@ -105,28 +119,21 @@ export async function getProfile(userId) {
 export async function setProfile(userId, profile) {
   if (!kvConfigured()) return false;
   try {
-    await kvPOST(`set/${encodeURIComponent(profileKey(userId))}`, {
-      value: JSON.stringify(profile)
-    });
+    await kvSet(profileKey(userId), JSON.stringify(profile));
     return true;
   } catch { return false; }
 }
 
 export async function eraseAll(userId) {
-  // Wipes both history and profile (best effort).
   try { await clearHistory(userId); } catch {}
-  try {
-    if (kvConfigured()) {
-      await kvPOST(`del/${encodeURIComponent(profileKey(userId))}`);
-    }
-  } catch {}
+  try { if (kvConfigured()) await kvDel(profileKey(userId)); } catch {}
   return true;
 }
 
 // Stage gating by time since firstSeen (days) AND progress.
 export function computeStage(profile) {
   const days = Math.max(0, (Date.now() - (profile.firstSeen || Date.now())) / 86400000);
-  // Time gates (approx): S1 >= 7d, S2 >= 21d, S3 >= 60d
+  // Time caps: S1 >= 7d, S2 >= 21d, S3 >= 60d
   const timeCap =
     days >= 60 ? 3 :
     days >= 21 ? 2 :
@@ -139,8 +146,8 @@ export function computeStage(profile) {
 export function bumpProgress(profile) {
   profile.interactions = (profile.interactions || 0) + 1;
   profile.lastSeen = Date.now();
-  // Very slow growth per interaction
-  const inc = 0.03; // ~33+ meaningful turns per stage (time still gates)
+  // Slow growth per interaction; time still gates
+  const inc = 0.03; // ~33+ turns per stage
   profile.progress = Math.min(3, (profile.progress || 0) + inc);
   profile.stage = computeStage(profile);
   return profile;
@@ -156,7 +163,6 @@ export function maybeAliasFrom(text) {
   for (const rx of rxes) {
     const m = t.match(rx);
     if (m && m[2]) return m[2];
-    if (m && m[1] && !m[2]) return m[1];
   }
   return null;
 }
@@ -198,7 +204,7 @@ export function buildProfileSummary(p) {
   return `PROFILE ${bits.join(' • ')}`;
 }
 
-// ---------- Load public JSON safely ----------
+// ---------- Read public JSON safely ----------
 export async function readPublicJson(fileRelative) {
   try {
     const filePath = path.join(process.cwd(), 'public', fileRelative);
@@ -222,9 +228,9 @@ export async function kvPing() {
   if (!kvConfigured()) return { enabled:false };
   try {
     const key = `xyloh:p:${Math.random().toString(36).slice(2,8)}`;
-    await kvPOST(`set/${encodeURIComponent(key)}`, { value:'1', ex:10 });
-    const r = await kvGET(`get/${encodeURIComponent(key)}`);
-    return { enabled:true, ok: r?.result === '1' };
+    await kvSet(key, '1', { ex: 10 });
+    const r = await kvGet(key);
+    return { enabled:true, ok: r?.result === '1', raw:r };
   } catch (e) {
     return { enabled:true, ok:false, error:String(e?.message || e) };
   }
