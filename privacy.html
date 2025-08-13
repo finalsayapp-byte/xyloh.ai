@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Xyloh.ai — Privacy Policy</title>
+<style>
+  :root{--bg:#0f0f12;--panel:#17171c;--line:#2a2a36;--text:#eef;--muted:#a8a8b6;--a:#8a7bff;--b:#c08bff}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Arial;background:radial-gradient(1200px 800px at 20% -10%,#1a1630,transparent),var(--bg);color:var(--text)}
+  .wrap{max-width:900px;margin:0 auto;padding:24px}
+  h1{margin:8px 0 12px}
+  h2{margin:22px 0 8px;font-size:18px}
+  p{color:#d7d7e6;line-height:1.6}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:12px}
+  .btn{display:inline-block;margin:14px 0 0;padding:10px 12px;border-radius:12px;text-decoration:none;color:#fff;background:linear-gradient(90deg,var(--a),var(--b));font-weight:800}
+  .muted{color:var(--muted);font-size:12px}
+  a{color:#9aa1ff}
+  ul{margin:8px 0 8px 18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Privacy Policy</h1>
+  <div class="muted">Last updated: <span id="d"></span></div>
+
+  <div class="panel">
+    <h2>Overview</h2>
+    <p>Xyloh.ai provides conversational assistance and experimental features (“Services”). This page explains what we collect, why we collect it, and your choices.</p>
+
+    <h2>What We Collect</h2>
+    <ul>
+      <li><strong>Session Data:</strong> A user-provided session ID (e.g., email/handle) used to save conversation history to our key-value store.</li>
+      <li><strong>Messages:</strong> Text you send and AI replies, stored to deliver continuity and let you revisit past conversations.</li>
+      <li><strong>Basic Analytics:</strong> Minimal usage metrics (e.g., request counts, timestamps) for reliability and abuse prevention.</li>
+      <li><strong>Optional Sources:</strong> If you use search-powered features, queries are sent to trusted third-party APIs (e.g., news/medical) to fetch citations.</li>
+    </ul>
+
+    <h2>How We Use Data</h2>
+    <ul>
+      <li>Provide and improve the Services (e.g., load your history, generate responses, fetch citations).</li>
+      <li>Maintain security and prevent abuse.</li>
+      <li>Fix bugs, monitor uptime, and understand aggregate usage (non-identifying).</li>
+    </ul>
+
+    <h2>What We Don’t Do</h2>
+    <ul>
+      <li>No sale of personal data.</li>
+      <li>No ad-tech trackers.</li>
+      <li>No scraping of your external accounts.</li>
+    </ul>
+
+    <h2>Third-Party Services</h2>
+    <p>When enabled by you, we may call external APIs (e.g., OpenAI for model inference, news/medical/legal sources for citations). Those services process your queries under their own terms and privacy policies.</p>
+
+    <h2>Your Choices</h2>
+    <ul>
+      <li>Use a pseudonymous session ID (not an email) if you prefer.</li>
+      <li>Request deletion of stored conversation history by contacting us at <a href="mailto:hello@xyloh.ai">hello@xyloh.ai</a>.</li>
+      <li>Limit use of search-powered features if you don’t want queries sent to third-party APIs.</li>
+    </ul>
+
+    <h2>Data Retention</h2>
+    <p>Conversation history is retained to provide continuity, but we cap storage and periodically purge old items. You can request deletion at any time.</p>
+
+    <h2>Security</h2>
+    <p>We use modern cloud infrastructure and limit access to environment secrets and data. No system is perfectly secure; report issues to <a href="mailto:security@xyloh.ai">security@xyloh.ai</a>.</p>
+
+    <h2>Children</h2>
+    <p>The Services are not directed to children under 13. If you believe we’ve collected data from a child, contact us for removal.</p>
+
+    <h2>Updates</h2>
+    <p>We may update this policy as the product evolves. We’ll revise the “Last updated” date and, for material changes, may provide additional notice.</p>
+
+    <a class="btn" href="/">← Back to Home</a>
+  </div>
+
+  <p class="muted" style="margin-top:10px">This page is informational and not legal advice.</p>
+</div>
+<script>
+  document.getElementById('d').textContent = new Date().toLocaleDateString();
+</script>
+</body>
+</html>
