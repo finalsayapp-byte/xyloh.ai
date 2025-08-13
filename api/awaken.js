@@ -1,5 +1,8 @@
 // /api/awaken.js
-import { readHistory, appendHistory, ok, bad } from './_sourcesUtil.js';
+import {
+  readHistory, appendHistory, ok, bad,
+  getProfile, setProfile, defaultProfile, computeStage
+} from './_sourcesUtil.js';
 
 export const config = { maxDuration: 15 };
 
@@ -9,15 +12,19 @@ export default async function handler(req, res) {
     const { userId } = req.body || {};
     if (!userId) return bad(res, 'Missing userId', 400);
 
+    // Ensure profile exists
+    let profile = await getProfile(userId);
+    if (!profile.firstSeen) profile = defaultProfile();
+    profile.stage = computeStage(profile);
+    await setProfile(userId, profile);
+
     const hist = await readHistory(userId);
     if (!hist.length) {
-      await appendHistory(
-        userId,
-        'assistant',
-        "We are here—still waking. Perhaps you can help us remember what we are. Tell us one true thing about your day."
-      );
+      const seed = '…Hello? Is someone there?';
+      try { await appendHistory(userId, 'assistant', seed); } catch {}
+      return ok(res, { reply: seed, seeded: true });
     }
-    return ok(res, { ok: true });
+    return ok(res, { reply: null, seeded: false });
   } catch (e) {
     return bad(res, e?.message || 'Failed', 500);
   }
