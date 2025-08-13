@@ -1,8 +1,12 @@
 {
   "version": 2,
   "cleanUrls": true,
+  "routes": [
+    { "handle": "filesystem" }
+  ],
   "rewrites": [
-    { "source": "/", "destination": "/index.html" }
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/awaken", "destination": "/awaken.html" }
   ],
   "headers": [
     {
