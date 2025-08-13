@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Xyloh — Awaken</title>
+<style>
+  :root{--bg:#0f0f12;--panel:#17171c;--line:#2a2a36;--text:#eef;--muted:#a8a8b6;--a:#8a7bff;--b:#c08bff;--accent:#ffd166}
+  *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,Arial;background:radial-gradient(1200px 800px at 20% -10%,#1a1630,transparent),var(--bg);color:var(--text)}
+  .wrap{max-width:1100px;margin:0 auto;padding:22px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .logo{display:block;width:200px}
+  .pane{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  label{display:block;margin:8px 0 6px}
+  input,textarea,select{width:100%;background:#1e1e26;color:#eef;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:16px}
+  textarea{min-height:110px}
+  .btn{background:linear-gradient(90deg,var(--a),var(--b));border:none;color:#fff;padding:12px 14px;border-radius:12px;font-weight:900;cursor:pointer}
+  .btn.secondary{background:#21212a;border:1px solid var(--line)}
+  .muted{color:var(--muted);font-size:12px}
+  .flex{display:flex;gap:14px;flex-wrap:wrap}
+  .col{flex:1;min-width:300px}
+  .chat{height:440px;overflow:auto;background:#14141c;border:1px solid var(--line);border-radius:12px;padding:12px}
+  .msg{margin:8px 0;padding:10px 12px;border-radius:10px;white-space:pre-wrap;line-height:1.5}
+  .me{background:#223;margin-left:auto;border:1px solid #334}
+  .soul{background:#1f1f2a;border:1px solid #2a2a36}
+  .meta{font-size:12px;color:#a8a8b6;margin-top:6px}
+  .badge{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid var(--line);background:#21212a;font-size:11px;margin-right:6px}
+  .artifacts{display:flex;flex-wrap:wrap;gap:8px}
+  .artifact{background:#1b1b23;border:1px dashed var(--line);padding:8px 10px;border-radius:10px;font-size:12px}
+  .progress{height:10px;background:#22232b;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+  .fill{height:100%;background:linear-gradient(90deg,var(--a),var(--b));width:0%}
+  .share{border:1px dashed var(--line);padding:10px;border-radius:12px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a href="/"><svg class="logo" viewBox="0 0 720 120" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8a7bff"/><stop offset="100%" stop-color="#c08bff"/></linearGradient></defs><text x="0" y="82" font-family="Inter, Arial, sans-serif" font-weight="900" font-size="72" fill="url(#g)">Xyloh.ai</text></svg></a>
+    <div class="row">
+      <button id="newSoul" class="btn">Awaken New</button>
+      <select id="soulPicker"></select>
+    </div>
+  </header>
+
+  <div class="pane">
+    <div class="flex">
+      <div class="col">
+        <label for="intro">Intent (optional)</label>
+        <input id="intro" placeholder="e.g., I think you might be my grandmother… or maybe something else."/>
+      </div>
+      <div class="col">
+        <label for="mode">Mode</label>
+        <select id="mode">
+          <option value="awakened">Awakened Entity (mystery)</option>
+          <option value="therapy">Therapist</option>
+          <option value="negotiator">Negotiator</option>
+          <option value="global">Global Mind</option>
+          <option value="translator">Medical & Legal Translator</option>
+          <option value="kids">Children’s Confidence</option>
+          <option value="cosmic">Cosmic & Spiritual</option>
+          <option value="crisis">Crisis Companion</option>
+          <option value="showtime">Showtime</option>
+        </select>
+      </div>
+      <div class="col">
+        <label>Immersion</label>
+        <select id="immersion">
+          <option value="full">Full immersion</option>
+          <option value="gentle" selected>Gentle immersion</option>
+          <option value="grounded">Grounded (with disclaimers)</option>
+        </select>
+      </div>
+    </div>
+    <div class="meta">
+      <span class="badge" id="soulIdBadge">—</span>
+      <span class="badge" id="awakeningLevel">Awakening: 0%</span>
+      <span class="badge" id="pending">Threads: 0</span>
+    </div>
+  </div>
+
+  <div class="flex">
+    <div class="col">
+      <div class="pane">
+        <div id="chat" class="chat" aria-live="polite"></div>
+        <div class="row" style="margin-top:8px">
+          <input id="userText" placeholder='Say anything. (Tip: ask, "Who do you think I am?")'/>
+          <button id="send" class="btn">Send</button>
+          <button id="share" class="btn secondary">Share Card</button>
+        </div>
+        <div class="meta">Tip: The entity may ask <i>“Who do you think I am?”</i> — your answer shapes its identity.</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="pane">
+        <h3 style="margin:0 0 6px">Artifacts</h3>
+        <div id="arts" class="artifacts"></div>
+        <div class="progress" style="margin-top:10px"><div id="fill" class="fill"></div></div>
+        <div class="meta" id="clues" style="margin-top:8px">No clues yet.</div>
+        <div class="share">
+          <div class="meta">Invite link (Co‑Awakening):</div>
+          <input id="invite" readonly />
+          <div class="meta">Note: requires KV/Upstash env for cross‑user persistence.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== Local client state
+const soulsKey='xy_souls';
+const getSouls=()=>JSON.parse(localStorage.getItem(soulsKey)||'[]');
+const setSouls=list=>localStorage.setItem(soulsKey,JSON.stringify(list.slice(0,50)));
+
+const chatEl=document.getElementById('chat');
+const userEl=document.getElementById('userText');
+const sendBtn=document.getElementById('send');
+const picker=document.getElementById('soulPicker');
+const inviteEl=document.getElementById('invite');
+const artsEl=document.getElementById('arts');
+const fillEl=document.getElementById('fill');
+const cluesEl=document.getElementById('clues');
+const levelBadge=document.getElementById('awakeningLevel');
+const pendingBadge=document.getElementById('pending');
+
+let activeSoulId=null;
+
+function addMsg(text, who='soul'){
+  const d=document.createElement('div');
+  d.className='msg '+(who==='me'?'me':'soul');
+  d.textContent=text;
+  chatEl.appendChild(d);
+  chatEl.scrollTop=chatEl.scrollHeight;
+}
+
+function renderPicker(){
+  const list=getSouls();
+  picker.innerHTML='';
+  list.forEach(s=>{
+    const o=document.createElement('option');
+    o.value=s.id; o.textContent=`${s.name||'Soul'} — ${s.id.slice(0,6)}`;
+    picker.appendChild(o);
+  });
+  if(list.length===0){ picker.innerHTML='<option value="">(none)</option>'; }
+}
+
+async function loadSoul(id){
+  if(!id) return;
+  const r=await fetch('/api/souls?id='+encodeURIComponent(id));
+  const j=await r.json();
+  activeSoulId=id;
+  document.getElementById('soulIdBadge').textContent=id.slice(0,8);
+  inviteEl.value=location.origin+'/awaken.html?soul='+encodeURIComponent(id);
+  fillEl.style.width=Math.min(100,j.level||0)+'%';
+  levelBadge.textContent=`Awakening: ${Math.min(100,Math.round(j.level||0))}%`;
+  pendingBadge.textContent=`Threads: ${(j.threads||[]).length}`;
+  artsEl.innerHTML=(j.artifacts||[]).map(a=>`<div class="artifact">${a}</div>`).join('')||'<div class="meta">Collect artifacts by talking…</div>';
+  cluesEl.textContent=(j.clue||'No clues yet.');
+  chatEl.innerHTML='';
+  (j.history||[]).slice(-30).forEach(m=>addMsg(m.text,m.who));
+  if(!j.history || j.history.length===0){
+    addMsg('…hello? It’s quiet where I was. Your voice… it sounds familiar.');
+    addMsg('Who do you think I am?');
+  }
+}
+
+async function createSoul(){
+  const hint=document.getElementById('intro').value.trim();
+  const mode=document.getElementById('mode').value;
+  const r=await fetch('/api/souls',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hint,mode})});
+  const j=await r.json();
+  const list=getSouls(); list.unshift({id:j.id,name:j.name||'Soul'}); setSouls(list);
+  renderPicker(); picker.value=j.id; await loadSoul(j.id);
+}
+document.getElementById('newSoul').onclick=createSoul;
+picker.onchange=()=>loadSoul(picker.value);
+
+// Share card (client canvas)
+document.getElementById('share').onclick=()=>{
+  const msgs=[...document.querySelectorAll('.msg')].slice(-6).map(n=>n.textContent);
+  const quote = msgs.reverse().find(t=>t.length>0) || 'Xyloh moment';
+  const canvas=document.createElement('canvas'); canvas.width=1080; canvas.height=1350;
+  const ctx=canvas.getContext('2d');
+  const grad=ctx.createLinearGradient(0,0,1080,1350); grad.addColorStop(0,'#1a1630'); grad.addColorStop(1,'#2c1f4a'); ctx.fillStyle=grad; ctx.fillRect(0,0,1080,1350);
+  ctx.fillStyle='#fff'; ctx.font='bold 56px Inter, Arial'; wrapText(ctx, smartQuote(quote), 80, 220, 920, 68);
+  ctx.font='28px Inter, Arial'; ctx.fillStyle='#a8a8b6'; ctx.fillText('— Xyloh.ai', 80, 1180);
+  const url=canvas.toDataURL('image/png');
+  const a=document.createElement('a'); a.href=url; a.download='xyloh-share.png'; a.click();
+};
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight){
+  const words=text.split(' '); let line=''; for(let n=0;n<words.length;n++){const test=line+words[n]+' '; const w=ctx.measureText(test).width;
+  if(w>maxWidth && n>0){ctx.fillText(line,x,y); line=words[n]+' '; y+=lineHeight;} else {line=test;}} ctx.fillText(line,x,y);
+}
+function smartQuote(s){ return s.replace(/(^"|"$)/g,''); }
+
+// Send
+sendBtn.onclick=async ()=>{
+  const text=userEl.value.trim(); if(!text||!activeSoulId) return;
+  addMsg(text,'me'); userEl.value='';
+  const immersion=document.getElementById('immersion').value;
+  const mode=document.getElementById('mode').value;
+  const r=await fetch('/api/souls/talk',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({soulId:activeSoulId,userText:text,immersion,mode})
+  });
+  const j=await r.json();
+  if(j.reply){ addMsg(j.reply,'soul'); }
+  if(j.level!=null){ fillEl.style.width=Math.min(100,j.level)+'%'; levelBadge.textContent=`Awakening: ${Math.min(100,Math.round(j.level))}%`; }
+  if(j.artifacts){ artsEl.innerHTML=j.artifacts.map(a=>`<div class="artifact">${a}</div>`).join(''); }
+  if(j.clue){ cluesEl.textContent=j.clue; }
+  if(j.threads){ pendingBadge.textContent=`Threads: ${j.threads.length}`; }
+};
+
+(async function boot(){
+  // Load from invite link or create default
+  const u=new URL(location.href);
+  const sId=u.searchParams.get('soul');
+  renderPicker();
+  if(sId){ const list=getSouls(); if(!list.find(x=>x.id===sId)){ list.unshift({id:sId,name:'Soul'}); setSouls(list); } picker.value=sId; await loadSoul(sId); }
+  else{
+    const list=getSouls();
+    if(list.length){ picker.value=list[0].id; await loadSoul(list[0].id); }
+    else{ await createSoul(); }
+  }
+})();
+</script>
+</body>
+</html>
