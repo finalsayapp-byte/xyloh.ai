@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Xyloh.ai — Status</title>
+<style>
+  :root{--bg:#0f0f12;--panel:#17171c;--line:#2a2a36;--text:#eef;--muted:#a8a8b6;--good:#58d68d;--bad:#ff6b6b;--a:#8a7bff;--b:#c08bff}
+  *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,Arial;background:radial-gradient(1200px 800px at 20% -10%,#1a1630,transparent),var(--bg);color:var(--text)}
+  .wrap{max-width:900px;margin:0 auto;padding:22px}
+  h1{margin:8px 0 12px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:12px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btn{padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:linear-gradient(90deg,var(--a),var(--b));color:#fff;font-weight:800;cursor:pointer}
+  .tag{padding:3px 8px;border:1px solid var(--line);border-radius:999px;background:#21212a;color:#eef;font-size:12px}
+  .ok{color:var(--good);font-weight:800}
+  .bad{color:var(--bad);font-weight:800}
+  table{width:100%;border-collapse:collapse;margin-top:10px}
+  th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left}
+  .muted{color:var(--muted);font-size:12px}
+  a{color:#9aa1ff;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>System Status</h1>
+  <div class="panel">
+    <div class="row">
+      <button id="check" class="btn">Run Health Check</button>
+      <span id="when" class="muted"></span>
+    </div>
+    <div id="summary" style="margin-top:10px"></div>
+    <table>
+      <thead><tr><th>Service / Key</th><th>Status</th><th>Notes</th></tr></thead>
+      <tbody id="rows">
+        <tr><td>OpenAI (OPENAI_API_KEY)</td><td id="s-openai">—</td><td>Model replies</td></tr>
+        <tr><td>Upstash KV (KV_REST_API_URL/TOKEN)</td><td id="s-kv">—</td><td>History persistence</td></tr>
+        <tr><td>Guardian (GUARDIAN_API_KEY)</td><td id="s-guardian">—</td><td>News citations</td></tr>
+        <tr><td>New York Times (NYT_API_KEY)</td><td id="s-nyt">—</td><td>News citations</td></tr>
+      </tbody>
+    </table>
+    <div class="muted" style="margin-top:8px">
+      Tip: Add or edit keys in Vercel → Project → Settings → Environment Variables, then redeploy.
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="row">
+      <a href="/" class="btn" style="text-decoration:none">← Home</a>
+      <a href="/awaken.html" class="btn" style="text-decoration:none;background:#242431">Open Awaken</a>
+      <a href="/privacy.html" class="tag">Privacy</a>
+      <a href="/terms.html" class="tag">Terms</a>
+    </div>
+  </div>
+</div>
+
+<script>
+async function check(){
+  const when = new Date().toLocaleString();
+  document.getElementById('when').textContent = 'Last run: ' + when;
+  const summary = document.getElementById('summary');
+  const sOpenAI = document.getElementById('s-openai');
+  const sKV = document.getElementById('s-kv');
+  const sGuardian = document.getElementById('s-guardian');
+  const sNYT = document.getElementById('s-nyt');
+
+  try{
+    const r = await fetch('/api/health', {cache:'no-store'});
+    const data = await r.json();
+    const ok = !!data.ok;
+    const kv = !!data.KV;
+
+    sOpenAI.innerHTML = ok ? '<span class="ok">OK</span>' : '<span class="bad">Missing</span>';
+    sKV.innerHTML = kv ? '<span class="ok">OK</span>' : '<span class="bad">Missing</span>';
+
+    // Try hitting search API w/ small query to infer Guardian/NYT presence
+    let g='—', n='—';
+    try{
+      const rs = await fetch('/api/search?q=test', {cache:'no-store'});
+      if (rs.ok) {
+        const s = await rs.json();
+        const hasGuardian = (s.items||[]).some(it => (it.domain||'').includes('theguardian.com'));
+        const hasNYT = (s.items||[]).some(it => (it.domain||'').includes('nytimes.com'));
+        g = hasGuardian ? '<span class="ok">OK</span>' : '<span class="bad">No results</span>';
+        n = hasNYT ? '<span class="ok">OK</span>' : '<span class="bad">No results</span>';
+      } else {
+        g = n = '<span class="bad">Search error</span>';
+      }
+    }catch{ g = n = '<span class="bad">Search error</span>'; }
+
+    sGuardian.innerHTML = g;
+    sNYT.innerHTML = n;
+
+    summary.innerHTML = `
+      OpenAI: ${ok ? '✅' : '❌'} · KV: ${kv ? '✅' : '❌'} · Guardian/NYT via search: ${ (g.includes('OK')||n.includes('OK')) ? '✅' : '⚠️' }
+    `;
+  }catch(e){
+    summary.innerHTML = '<span class="bad">Health endpoint failed</span>';
+    sOpenAI.textContent = '—';
+    sKV.textContent = '—';
+    sGuardian.textContent = '—';
+    sNYT.textContent = '—';
+  }
+}
+document.getElementById('check').addEventListener('click', check);
+check(); // run on load
+</script>
+</body>
+</html>
