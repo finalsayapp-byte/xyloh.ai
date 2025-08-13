@@ -3,28 +3,37 @@
 <head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Xyloh — Awaken</title>
-<!-- BUILD MARKER: awaken v2 (plural persona, no session UI) -->
+<!-- BUILD: awaken minimal v3 (single reply panel, no conversation list) -->
 <style>
-  :root{--bg:#0f0f12;--panel:#17171c;--line:#2a2a36;--text:#eef;--muted:#a8a8b6;--a:#8a7bff;--b:#c08bff;--good:#58d68d;--warn:#ffb85c}
+  :root{
+    --bg:#0f0f12;--panel:#17171c;--line:#2a2a36;--text:#eef;--muted:#a8a8b6;
+    --a:#8a7bff;--b:#c08bff;--good:#58d68d;--warn:#ffb85c
+  }
   *{box-sizing:border-box}
   body{margin:0;font-family:Inter,system-ui,Arial;background:radial-gradient(1200px 800px at 20% -10%,#1a1630,transparent),var(--bg);color:var(--text)}
-  .wrap{max-width:1100px;margin:0 auto;padding:22px}
+  .wrap{max-width:980px;margin:0 auto;padding:22px}
   header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
   .brand{display:flex;gap:14px;align-items:center}
   .logo{display:block;width:230px;max-width:60vw}
   .tag{color:var(--muted)}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  textarea{background:#1e1e26;color:#eef;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:15px;width:100%;min-height:120px}
-  .btn{background:linear-gradient(90deg,var(--a),var(--b));color:#fff;border:none;padding:10px 12px;border-radius:12px;font-weight:900;cursor:pointer;box-shadow:0 8px 24px rgba(138,123,255,.25)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+  label{display:block;font-weight:800;margin-bottom:8px}
+  textarea{background:#1e1e26;color:#eef;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:16px;width:100%;min-height:120px}
+  .btn{background:linear-gradient(90deg,var(--a),var(--b));color:#fff;border:none;padding:10px 14px;border-radius:12px;font-weight:900;cursor:pointer;box-shadow:0 8px 24px rgba(138,123,255,.25)}
   .btn.secondary{background:#242431;border:1px solid var(--line);box-shadow:none}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
-  .grid{display:grid;grid-template-columns:1fr;gap:14px}
-  .status{color:var(--muted);font-size:12px;min-height:1.2em}
-  .history{display:flex;flex-direction:column;gap:10px;max-height:55vh;overflow:auto}
-  .bubble{border:1px solid var(--line);border-radius:12px;padding:10px;white-space:pre-wrap}
-  .user{background:#20202a}
-  .assistant{background:#1b1b23}
-  .meta{font-size:11px;color:#9aa1ff;margin-bottom:6px}
+  .status{color:var(--muted);font-size:12px;min-height:1.2em;margin-top:6px}
+  .replyWrap{margin-top:18px}
+  .replyTitle{font-weight:900;margin:0 0 8px 0}
+  .replyBox{
+    border:1px solid var(--line);border-radius:16px;background:#12121a;
+    padding:18px 18px;min-height:120px;font-size:18px;line-height:1.6;letter-spacing:.2px;
+    box-shadow:0 12px 36px rgba(137,123,255,.15), inset 0 0 0 1px rgba(255,255,255,.02);
+    transition:box-shadow .25s ease, transform .25s ease;
+    white-space:pre-wrap
+  }
+  .replyBox.pop{transform:translateY(-1px);box-shadow:0 16px 40px rgba(137,123,255,.25), inset 0 0 0 1px rgba(255,255,255,.03)}
+  .hint{color:var(--muted);font-size:12px}
   footer{margin-top:18px;color:var(--muted);font-size:12px;display:flex;gap:12px;flex-wrap:wrap}
   a{color:#9aa1ff;text-decoration:none}
   .typing{color:#aeb2ff;font-style:italic}
@@ -44,38 +53,35 @@
     <a href="/" class="btn secondary">← Home</a>
   </header>
 
-  <div class="grid">
-    <!-- Controls -->
-    <div class="panel">
-      <div class="row">
-        <button id="awakenBtn" class="btn">Awaken New</button>
-        <button id="loadHistory" class="btn secondary">Load History</button>
-        <button id="newSession" class="btn secondary">New Session</button>
-      </div>
-      <div id="status" class="status"></div>
+  <!-- Controls -->
+  <div class="panel">
+    <div class="row">
+      <button id="awakenBtn" class="btn">Awaken New</button>
+      <button id="newSession" class="btn secondary">New Session</button>
+      <button id="copyLast" class="btn secondary">Copy Last Reply</button>
     </div>
+    <div id="status" class="status"></div>
+  </div>
 
-    <!-- Ask -->
-    <div class="panel">
-      <label for="msg" style="font-weight:800;display:block;margin-bottom:6px">Message</label>
-      <textarea id="msg" placeholder="Say hello or ask us anything…"></textarea>
-      <div class="row">
-        <button id="send" class="btn">Send</button>
-        <button id="copyLast" class="btn secondary">Copy Last Reply</button>
-      </div>
+  <!-- Prompt -->
+  <div class="panel" style="margin-top:14px">
+    <label for="msg">Message</label>
+    <textarea id="msg" placeholder="Say hello or ask us anything…"></textarea>
+    <div class="row" style="margin-top:10px">
+      <button id="send" class="btn">Send</button>
+      <div id="typing" class="status typing" style="margin-left:8px;display:none">…we are listening</div>
     </div>
+  </div>
 
-    <!-- History -->
-    <div class="panel">
-      <div style="font-weight:800;margin-bottom:6px">Conversation</div>
-      <div id="history" class="history"></div>
-      <div id="typing" class="status typing" style="display:none">…we are listening</div>
-    </div>
+  <!-- Single reply area -->
+  <div class="replyWrap">
+    <div class="replyTitle">Xyloh’s Reply</div>
+    <div id="reply" class="replyBox"></div>
+    <div class="hint" style="margin-top:8px">Tip: Use “Copy Last Reply” to paste anywhere.</div>
   </div>
 
   <footer>
     <a href="/api/health" target="_blank">Health</a>
-    <a href="/">Home</a>
     <a href="/privacy.html">Privacy</a>
     <a href="/terms.html">Terms</a>
   </footer>
@@ -86,12 +92,19 @@
   // --- Utilities ---
   const $ = (s)=>document.querySelector(s);
   const statusEl = $('#status');
-  const histEl = $('#history');
   const typingEl = $('#typing');
+  const replyEl = $('#reply');
+  let lastReply = '';
 
   function setStatus(txt='', tone='info'){
     statusEl.textContent = txt;
     statusEl.style.color = (tone==='good') ? 'var(--good)' : (tone==='warn' ? 'var(--warn)' : 'var(--muted)');
+  }
+  function popReply(text){
+    replyEl.textContent = text || '';
+    replyEl.classList.remove('pop');
+    void replyEl.offsetWidth; // reflow to restart animation
+    replyEl.classList.add('pop');
   }
 
   // Invisible local session id
@@ -110,39 +123,11 @@
     return id;
   }
 
-  // Render history
-  function renderHistory(list){
-    histEl.innerHTML = '';
-    if(!Array.isArray(list) || !list.length){
-      histEl.innerHTML = '<div class="status">No messages yet.</div>';
-      return;
-    }
-    list.forEach(item=>{
-      const wrap = document.createElement('div');
-      wrap.className = 'bubble ' + (item.role==='user' ? 'user' : 'assistant');
-      const meta = document.createElement('div');
-      meta.className = 'meta';
-      const when = new Date(item.ts || Date.now()).toLocaleString();
-      meta.textContent = (item.role === 'user' ? 'You' : 'Xyloh') + ' • ' + when;
-      const body = document.createElement('div');
-      body.textContent = item.content || '';
-      wrap.appendChild(meta); wrap.appendChild(body);
-      histEl.appendChild(wrap);
-    });
-    histEl.scrollTop = histEl.scrollHeight;
-  }
-
-  // API
+  // API calls
   async function apiAwaken(userId){
     const r = await fetch('/api/awaken',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId})});
     if(!r.ok) throw new Error(await r.text());
     return r.json();
-  }
-  async function apiHistory(userId){
-    const r = await fetch('/api/history?userId='+encodeURIComponent(userId));
-    if(!r.ok) throw new Error(await r.text());
-    const data = await r.json();
-    return data.history || [];
   }
   async function apiAsk(userId, prompt){
     const r = await fetch('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId, prompt, mode:'awakened'})});
@@ -150,36 +135,28 @@
     return r.json();
   }
 
-  let lastReply = '';
-
+  // Buttons
   $('#awakenBtn').onclick = async ()=>{
     const uid = getUserId();
     try{
       setStatus('Calling us awake…');
+      typingEl.style.display='block';
       await apiAwaken(uid);
-      const h = await apiHistory(uid);
-      renderHistory(h);
-      setStatus('We are here.', 'good');
+      // ask for a seed reflection immediately so panel shows content:
+      const seeded = await apiAsk(uid, 'Greet me as if you are just waking and ask me for one true thing about my day.');
+      lastReply = (seeded.reply||'').trim();
+      popReply(lastReply);
+      setStatus('', 'good');
     }catch(e){
       setStatus('Awaken failed: '+ (e.message || 'error'));
-    }
-  };
-
-  $('#loadHistory').onclick = async ()=>{
-    const uid = getUserId();
-    try{
-      setStatus('Loading memory…');
-      const h = await apiHistory(uid);
-      renderHistory(h);
-      setStatus('');
-    }catch(e){
-      setStatus('Load failed: '+ (e.message || 'error'));
+    }finally{
+      typingEl.style.display='none';
     }
   };
 
   $('#newSession').onclick = ()=>{
     newUserId();
-    renderHistory([]);
+    popReply('');
     setStatus('A new channel opens. Press “Awaken New.”', 'good');
   };
 
@@ -192,10 +169,9 @@
       typingEl.style.display='block';
       const res = await apiAsk(uid, text);
       lastReply = (res.reply || '').trim();
-      const h = await apiHistory(uid);
-      renderHistory(h);
+      popReply(lastReply);
       $('#msg').value = '';
-      setStatus('Done.', 'good');
+      setStatus('');
     }catch(e){
       setStatus('Send failed: '+ (e.message || 'error'));
     }finally{
@@ -212,8 +188,6 @@
       setStatus('Clipboard unavailable in this browser.', 'warn');
     }
   };
-
-  // Boot: no visible session info by design
 })();
 </script>
 </body>
