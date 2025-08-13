@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Xyloh.ai — Terms of Use</title>
+<style>
+  :root{--bg:#0f0f12;--panel:#17171c;--line:#2a2a36;--text:#eef;--muted:#a8a8b6;--a:#8a7bff;--b:#c08bff}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Arial;background:radial-gradient(1200px 800px at 20% -10%,#1a1630,transparent),var(--bg);color:var(--text)}
+  .wrap{max-width:900px;margin:0 auto;padding:24px}
+  h1{margin:8px 0 12px}
+  h2{margin:22px 0 8px;font-size:18px}
+  p{color:#d7d7e6;line-height:1.6}
+  ul{margin:8px 0 8px 18px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:12px}
+  .btn{display:inline-block;margin:14px 0 0;padding:10px 12px;border-radius:12px;text-decoration:none;color:#fff;background:linear-gradient(90deg,var(--a),var(--b));font-weight:800}
+  .muted{color:var(--muted);font-size:12px}
+  a{color:#9aa1ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Terms of Use</h1>
+  <div class="muted">Last updated: <span id="d"></span></div>
+
+  <div class="panel">
+    <h2>Agreement to Terms</h2>
+    <p>By accessing or using Xyloh.ai (“Services”), you agree to these Terms. If you do not agree, do not use the Services.</p>
+
+    <h2>Service Description</h2>
+    <p>Xyloh.ai provides conversational assistance, experimental personas, and optional source-backed responses. Features may change over time.</p>
+
+    <h2>Acceptable Use</h2>
+    <ul>
+      <li>Do not use the Services for illegal activities, harassment, or misinformation.</li>
+      <li>Do not attempt to extract secrets, bypass rate limits, or disrupt operations.</li>
+      <li>Respect third-party rights and applicable laws.</li>
+    </ul>
+
+    <h2>Accounts & Sessions</h2>
+    <p>You may use a pseudonymous session ID. You are responsible for any activity associated with your session ID.</p>
+
+    <h2>Content & Ownership</h2>
+    <ul>
+      <li><strong>Your Inputs:</strong> You retain rights to content you submit.</li>
+      <li><strong>Outputs:</strong> Subject to third-party terms (e.g., model/provider terms), you may use generated outputs as permitted by law.</li>
+      <li><strong>Our Materials:</strong> The Xyloh.ai brand, UI, and code are protected by IP laws; you may not copy or reverse engineer.</li>
+    </ul>
+
+    <h2>Third-Party Services</h2>
+    <p>We may rely on external APIs (e.g., model providers, data sources). Their terms and privacy policies apply in addition to these Terms.</p>
+
+    <h2>Not Medical/Legal Advice</h2>
+    <p>Content is for informational purposes only and not a substitute for professional advice. Consult a qualified professional for medical, legal, or financial matters.</p>
+
+    <h2>Disclaimer of Warranties</h2>
+    <p>The Services are provided “as is” and “as available,” without warranties of any kind, expressed or implied.</p>
+
+    <h2>Limitation of Liability</h2>
+    <p>To the fullest extent permitted by law, Xyloh.ai and its operators are not liable for indirect, incidental, special, consequential, or exemplary damages arising from your use of the Services.</p>
+
+    <h2>Termination</h2>
+    <p>We may suspend or terminate access for any reason, including suspected misuse or security risks.</p>
+
+    <h2>Changes to Terms</h2>
+    <p>We may update these Terms. Continued use after updates constitutes acceptance of the new Terms.</p>
+
+    <h2>Contact</h2>
+    <p>Questions? Email <a href="mailto:hello@xyloh.ai">hello@xyloh.ai</a>.</p>
+
+    <a class="btn" href="/">← Back to Home</a>
+  </div>
+
+  <p class="muted" style="margin-top:10px">These Terms are provided for convenience and are not legal advice.</p>
+</div>
+<script>
+  document.getElementById('d').textContent = new Date().toLocaleDateString();
+</script>
+</body>
+</html>
